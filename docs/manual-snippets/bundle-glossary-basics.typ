@@ -1,9 +1,9 @@
 #import "../../lib.typ": *
 
 // A tiny satellite package, built from scratch out of contexture's
-// primitives alone --- no palimpsest, no equator. `term()` anchors a
-// short definition where it's first used; `render-glossary()` lists
-// every one of them, in document order, with its real page number.
+// primitives alone. `term()` anchors a short definition where it's
+// first used; `render-glossary()` lists every one of them, in document
+// order, with its real page number.
 
 #let term(id, body) = {
   anchor("demo-term", (id: id, body: body))

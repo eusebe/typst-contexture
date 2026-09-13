@@ -23,12 +23,7 @@
   #if caption != none [#text(size: 0.78em, fill: luma(120), style: "italic")[#caption]]
 ]
 
-#let snippet(name, embed) = {
-  code-of("manual-snippets/" + name + ".typ")
-  v(0.5em)
-  embed("manual-snippets/" + name + "/")
-  v(1em)
-}
+#let side-by-side(..shots) = grid(columns: shots.pos().len(), gutter: 1em, ..shots)
 
 #align(center)[
   #v(0.5cm)
@@ -41,56 +36,64 @@
 #outline(indent: auto)
 #pagebreak()
 
-= What this package is for
+= What contexture is for
 
-Typst's experimental bundle export (`--features bundle --format bundle`) lets one compile produce several named documents that share one introspection space: a `query()` run from any one of them sees content laid out in *all* of them, with real, final page numbers --- because they were genuinely composed together, in the same pass. `contexture` is the backend that turns that raw capability into something pleasant to build on: one primitive to anchor a piece of data anywhere in the bundle and resolve it from anywhere else (`anchor`/`anchors`), one function that owns the only `document(...)` call in the whole bundle so independently-written packages never fight over it (`bundle`/`satellite`), two small compile-time flags shared by every package built on it (`variant`/`preview`), and a common way to report something wrong without necessarily failing the build (`diagnose`/`set-strict`).
+Typst can compile one source file into several output documents at once (the experimental bundle export, `--features bundle --format bundle`) that all share one introspection space: a `query()` run from any one of them sees content laid out in *all* of them, with real, final page numbers, because they were genuinely composed together in the same pass.
 
-`contexture` itself knows nothing about revisions, checklists, glossaries, or any other specific document type --- it only knows how to anchor data, resolve it across documents, and hand out real files at the end. Every example in the next few chapters builds something new directly on these primitives, with no other package involved at all, to show the mechanism stands on its own two feet. Only in the last chapter, "Composing independent packages," does a *pair* of real packages built on `contexture` --- `@preview/palimpsest` and `@preview/equator` --- enter the picture, not as this package's reason to exist, but as one further demonstration: that tools built independently on this backend, by people who've never seen each other's code, compose without friction.
+`contexture` is a small toolkit built directly on that capability:
 
-= What else you could build
+- *`anchor` / `anchors`* --- mark a spot in one document, read it back from any other, by real page.
+- *`satellite` / `bundle`* --- one shared entry point that decides which documents come out of a compile, so several independent pieces of code can each contribute a document without fighting over how the split works.
+- *`variant` / `preview`* --- two small flags any document you build can read, to change what a compile produces without adding a new one-off command-line flag for each idea.
+- *`diagnose` / `set-strict`* and *`xref`* --- a couple of shared conveniences: a visible way to flag a problem, and a `@label` that also prints its real page number.
 
-The examples ahead are one shape of a much larger family. Anything with the form "a source document, plus a companion that cites it with real page numbers, computed in the same pass" fits the same three-piece pattern: an anchor at each interesting location, a satellite that queries them, `bundle` to produce both files. None of the following exist as packages today --- they're sketches, meant to show the range this covers, not a roadmap:
-
-- *A list of figures or tables*, generated instead of hand-maintained --- immune to renumbering when a figure moves, impossible to forget to update.
-- *A glossary or index of terms* --- exactly the worked example in the next chapter, but just as at home in a legal contract's list of defined terms or a textbook's index.
-- *An answer key*, kept separate from the exam it belongs to, citing the real question numbers and page each one landed on after layout.
-- *An executive summary* that auto-cites the real page of whichever section of the full report it's summarizing.
-- *A preview/final split with nothing to do with revision tracking* --- a form whose preview build shows field ids or validation state inline (via `preview()`), never present in the version actually handed to someone.
-- *Supplementary materials* that cite "as shown in Figure 3, p. 7" of a main paper compiled in the very same pass, so the citation can never drift out of sync with a page a late edit renumbered.
-
-Each is the same handful of primitives from the next two chapters, arranged differently --- nothing app-specific ever needs to live inside `contexture` itself for any of them to work.
+`contexture` itself has no opinion on what any of this is *for* --- no notion of revisions, checklists, glossaries, or any other specific kind of document. Every example in this manual is self-contained: a manuscript plus a couple of small functions written directly against these primitives, nothing else involved, to show that the toolkit stands on its own. Only the closing chapter, "Composing independent packages," brings in outside packages --- not because this manual needs them to make its point, but to show what it looks like when two packages built independently on `contexture` end up sharing a compile.
 
 = Installation and compiling
 
 #code("#import \"@preview/contexture:0.1.0\": *")
 
-A bundle compiles with the `bundle` feature and format flags Typst's experimental export requires; everything else about *how many* files come out, and what they're named, is decided by what's listed under `documents:` (see "`satellite` and `bundle`" below), not by anything on the command line:
+Producing more than one document from a single file needs Typst's bundle export:
 
 #code("typst compile --features bundle --format bundle main.typ")
 
-Two flags, read by `variant()`/`preview()`, are available to every satellite regardless of which package defined it --- see "Two independent compile axes" below for why there are two, not one:
+Every project built on `contexture` can also be compiled with two extra flags, explained in full in "Two independent compile axes" below:
 
 #code(
-  "typst compile --features bundle --format bundle --input variant=tracked main.typ\n" +
+  "typst compile --features bundle --format bundle --input variant=... main.typ\n" +
   "typst compile --features bundle --format bundle --input preview=true main.typ"
 )
 
-= The anchor primitive: `anchor`, `anchors`
+= Quickstart: a manuscript with a generated companion
 
-/ `anchor(kind, payload)`: marks the current location with a namespaced, queryable piece of data. `kind` namespaces it so two unrelated packages picking the same `id` scheme never collide --- by convention, prefixed with the owning package's name (`"equator-item"`, `"palimpsest-passage"`). `payload` is whatever that package needs back later --- entirely opaque to `contexture` itself. Deliberately renders nothing on its own: emitting the metadata and deciding how (or whether) to render content around it are two different concerns, left to the caller.
-/ `anchors(kind)`: every anchor of that kind, in document order, from *anywhere in the bundle* --- including a document other than the one this is called from, which is the entire point. Must be called from within a `context`.
-
-This pair is the one mechanism every "cite this spot from another document, with its real page number" feature in this ecosystem is built from. The example below builds a small one from scratch: `term()` anchors a short definition where it's first used in the manuscript; a `glossary` satellite lists every one of them with the real page it was found on. Neither function exists in `contexture` itself --- this is exactly what a package built on it looks like, in miniature:
+The simplest thing to build on `contexture`: a manuscript, plus a second document generated from it. Below, a two-function glossary --- `term()` marks where a term is first defined; `render-glossary()` lists every term found anywhere in the bundle, each with the real page it landed on. Neither function is part of `contexture` --- this *is* what a package built on it looks like, complete:
 
 #code-of("manual-snippets/bundle-glossary-basics.typ")
 
-`manuscript.pdf`:
+Compiling this exact file --- `bundle-glossary-basics.typ`, the one shown above, nothing else --- with `typst compile --features bundle --format bundle` produces two PDFs. The first is `manuscript.pdf`:
 
 #shot("manual-snippets/bundle-glossary-basics/manuscript-plain.png")
 
-`glossary.pdf`, from the very same compile, citing the real pages the manuscript above was just laid out with:
+That name has nothing to do with the file just compiled, which could be called anything (`main.typ`, `report.typ`, ...) --- it comes entirely from `bundle()`'s own `manuscript-name:` parameter, `"manuscript"` by default. More on this in "`satellite` and `bundle`" below.
+
+`glossary.pdf`, from the very same compile:
 
 #shot("manual-snippets/bundle-glossary-basics/glossary-plain.png", width: 55%)
+
+Three things are happening, and the rest of this manual is one chapter per thing:
+
++ `term()` calls `anchor("demo-term", ...)` --- drops a small, named piece of data at this exact spot, then renders `body` as usual. Covered next, in "The anchor primitive."
++ `render-glossary()` calls `anchors("demo-term")` --- every anchor of that kind, anywhere in the bundle, each with a real `location()` to read a page number off. Same chapter.
++ `satellite("glossary", ...)` describes the second document; `#show: bundle.with(documents: (glossary,))` is what actually produces both PDFs from one compile. Covered in "`satellite` and `bundle`."
+
+If what brought you here is specifically the `variant`/`preview` flags, skip ahead --- they get their own chapter, with a dedicated example, further down.
+
+This same shape --- an anchor at each interesting spot, a satellite that queries them --- covers more than a glossary: a list of figures or tables (the next worked example), an index of defined terms, an answer key kept apart from the exam it belongs to, an executive summary that cites the real page of whatever it's summarizing, supplementary material that cites "as shown in Figure 3, p. 7" of a document compiled in the very same pass. Nothing app-specific has to live inside `contexture` for any of these to work --- each is the same handful of primitives, arranged differently.
+
+= The anchor primitive: `anchor`, `anchors`
+
+/ `anchor(kind, payload)`: marks the current location with a namespaced, queryable piece of data. `kind` namespaces the anchor so two unrelated pieces of code picking the same `id` scheme never collide --- prefix it with something specific to what you're building (`"glossary-term"`, `"figure-list-entry"`). `payload` is whatever you need back later --- entirely opaque to `contexture` itself. Deliberately renders nothing on its own beyond the metadata: emitting it and deciding how (or whether) to render content around it are two different jobs, left to the caller, exactly as `term()` above does both explicitly.
+/ `anchors(kind)`: every anchor of that kind, in document order, from *anywhere in the bundle* --- including a document other than the one this is called from, which is the entire point. Must be called from within a `context`.
 
 == Re-emitting stored content: `strip-labels`
 
@@ -100,16 +103,16 @@ A term's `body` can be arbitrary content, including a labelled figure --- and re
 
 Both the manuscript and the glossary show "Table 1" --- the genuine, resolved number, not a guess:
 
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
+#side-by-side(
   shot("manual-snippets/bundle-glossary-figure/manuscript-plain.png", caption: [manuscript.pdf]),
   shot("manual-snippets/bundle-glossary-figure/glossary-plain.png", caption: [glossary.pdf]),
 )
 
-`collect-metadata(body, tag)` and `collect-labels(body)` are the structural building blocks `strip-labels` and `anchor`/`anchors` themselves are built from --- a purely structural walk of an in-memory content tree, no `context` or layout involved, exposed directly for a package that needs to inspect content it's holding but hasn't (or may never) place into any document this compile. `is-blank(body)` and `is-textual(body)` answer two narrower questions the same way: whether `body` contains any real text at all (used by both palimpsest and equator to flag an accidentally empty marking call), and whether `body` is safe to wrap in literal quotation marks without producing a stray quote mark floating above a figure or table.
+== Structural utilities
 
-== A fuller example: list of figures
+`collect-metadata(body, tag)` and `collect-labels(body)` are the structural building blocks `strip-labels` and `anchor`/`anchors` themselves are built from --- a plain walk of an in-memory content tree, no `context` or layout involved, exposed directly for code that needs to inspect content it's holding but hasn't (or may never) placed into any document this compile. `is-blank(body)` answers "does this contain any real text at all" (handy for flagging an accidentally empty call to something like `term()`); `is-textual(body)` answers "is this safe to wrap in literal quotation marks", i.e. free of any `figure`, `table`, or block equation that a stray quote mark would otherwise float above.
+
+= A fuller example: list of figures
 
 The glossary above makes the mechanism easy to follow, at the cost of being a little toy --- two terms, one line each. Here's a version closer to what you'd actually paste into a real project: a "List of Figures" companion, several entries deep, spanning a page break, each citing the real page its figure landed on.
 
@@ -117,9 +120,7 @@ The glossary above makes the mechanism easy to follow, at the cost of being a li
 
 `manuscript.pdf` --- three ordinary figures across two pages, nothing about them different from any other Typst document:
 
-#grid(
-  columns: (1fr, 1fr),
-  gutter: 1em,
+#side-by-side(
   shot("manual-snippets/bundle-list-of-figures/manuscript-plain-1.png", caption: [page 1]),
   shot("manual-snippets/bundle-list-of-figures/manuscript-plain-2.png", caption: [page 2]),
 )
@@ -128,62 +129,68 @@ The glossary above makes the mechanism easy to follow, at the cost of being a li
 
 #shot("manual-snippets/bundle-list-of-figures/list-of-figures-plain.png", width: 70%)
 
-`fig()` here numbers its own entries by the order `anchor()` calls arrive in, rather than reading Typst's built-in `counter(figure)` --- simpler, and exactly right as long as `fig()` is the only thing creating figures in the document (true here; a project mixing `fig()` with bare `figure()` calls would want `counter(figure).at(hit.location())` instead, the same real-counter trick `strip-labels` already uses above). Either way, the page numbers are never guessed or hand-typed --- they come from `location().page()` on the anchor Typst itself placed, in the very compile that produced `manuscript.pdf`.
+`fig()` numbers its own entries by the order `anchor()` calls arrive in, rather than reading Typst's built-in `counter(figure)` --- simpler, and exactly right as long as `fig()` is the only thing creating figures in the document (a project mixing `fig()` with bare `figure()` calls would want `counter(figure).at(hit.location())` instead, the same real-counter trick `strip-labels` uses above). Either way, the page numbers are never guessed or hand-typed --- they come from `location().page()` on the anchor Typst itself placed, in the very compile that produced `manuscript.pdf`.
 
 = `satellite` and `bundle`: the shared pilot
 
-`document(...)` --- Typst's own primitive for naming one output of a bundle compile --- cannot be nested inside another `document(...)` call. That means two packages each shipping their *own* pilot (each calling `document(...)` internally, each convinced it alone owns the split between the manuscript and everything else) can never be stacked in the same compile. `contexture.bundle` is the fix: the *only* place, in this entire ecosystem, that ever calls `document(...)`. Every package built on `contexture` instead exposes a small constructor that returns a `satellite(...)` value --- inert data, not a `document(...)` call --- and the author lists as many of those as they like under one shared `documents:`.
+`document(...)` --- Typst's own primitive for naming one output of a bundle compile --- cannot be nested inside another `document(...)` call. That rules out letting several independent pieces of code each call `document(...)` on their own: whichever runs second would be trying to nest its document inside whatever the first one already produced. `contexture.bundle` is the fix: the *only* place that ever calls `document(...)`. Anything built on `contexture` instead exposes a small constructor that returns a `satellite(...)` value --- inert data, not a `document(...)` call --- and the author lists as many of those as they like under one shared `documents:`, exactly as the quickstart above already did with `glossary`.
 
-/ `satellite(name, render:, applicable:, side-content: none)`: describes one document to build alongside the manuscript. `name` is the base filename (`bundle` appends the variant/preview suffix). `render() -> content` produces this document's content, called only when `applicable() -> bool` (default: always) says yes for the current compile --- neither takes `variant`/`preview` as parameters: they're plain global functions, so a satellite that cares calls `variant()`/`preview()` itself, right inside its own closure, rather than having them threaded in (equator's checklist does exactly this in its own `applicable`, below).
-/ `bundle(template:, documents: (), strict: false, manuscript-name: "manuscript", body)`: the pilot itself, called via `#show: bundle.with(...)` --- `body` is the rest of the document (typically `#include "manuscript.typ"`). Builds the manuscript (`template(body)`) plus every satellite whose `applicable` returns true, each as its own real Typst document sharing this one compile's introspection space with all the others.
+/ `satellite(name, render:, applicable:, side-content: none)`: describes one document to build alongside the manuscript. `name` is the base filename (`bundle` appends the variant/preview suffix, see next chapter). `render() -> content` produces this document's content, called only when `applicable() -> bool` (default: always) says yes for the current compile.
+/ `bundle(template:, documents: (), strict: false, manuscript-name: "manuscript", body)`: the pilot itself, called via `#show: bundle.with(...)` --- `body` is the rest of the document, typically `#include "manuscript.typ"`. Builds the manuscript (`template(body)`) plus every satellite whose `applicable` returns true, each as its own real document sharing this one compile's introspection space with all the others.
 
-From `bundle-glossary-basics.typ` above, the wiring is just:
+`manuscript-name:` is the *only* thing that decides the manuscript's output filename --- it has no connection at all to the name of whatever `.typ` file you actually run `typst compile` on (every example in this manual compiles the snippet file shown directly, e.g. `bundle-glossary-basics.typ`, and still produces `manuscript.pdf`). A project that keeps its manuscript's prose in its own file, `#include`d into `body`, is free to name that file anything --- calling it `manuscript.typ` is only a common convention, not a requirement `bundle()` checks for. Every example in this manual takes the simplest route instead: the file you see printed *is* the file compiled, with the manuscript's own content written directly after `#show: bundle.with(...)`, no separate `#include` at all.
 
-#code(
-  "#let glossary = satellite(\"glossary\", render: () => render-glossary())\n\n" +
-  "#show: bundle.with(\n" +
-  "  documents: (glossary,),\n" +
-  ")"
-)
+*Restricting a compile to fewer documents.* `--input only=<comma-separated satellite names>` restricts a single compile to the manuscript plus just the named satellites --- `--input only=` with nothing after it produces the manuscript alone, whatever `documents:` lists. A command-line choice for a fast preview, not a property of the project: naming a satellite under `only:` that declines to build itself this compile (its own `applicable` says no) doesn't force it to.
 
-*Restricting a compile to fewer documents:* `--input only=<comma-separated satellite names>` restricts a single compile to the manuscript plus just the named satellites --- `--input only=` with nothing after it produces the manuscript alone. A command-line choice for a fast preview, not a property of the project: naming a satellite under `only:` that declines to build itself this compile (its own `applicable` says no) doesn't force it to.
-
-*`side-content`:* content a satellite wants placed in the manuscript regardless of whether *it itself* gets built this compile. Exists for one confirmed need so far: a satellite whose own anchors need to be registered even when a fast preview skips it (`--input only=manuscript`) --- otherwise some other check elsewhere in the manuscript (e.g. "this anchor has no matching response") would false-positive on every single anchor, purely because the satellite that would have answered them wasn't built this time. Paired with `collect-anchors(body, kind)` --- the structural counterpart to `anchors`, finding anchors already sitting inside an in-memory `body` that was never placed into any document --- and `reemit(collected)`, which registers one such found anchor as if it had been placed here.
+*`side-content`.* Content a satellite wants placed in the manuscript regardless of whether *it itself* gets built this compile. Useful when a satellite defines anchors that something elsewhere in the manuscript depends on for a check of its own (e.g. "does this passage have a matching answer somewhere?") --- skip the satellite via `only=` and, without `side-content`, that check would wrongly report every single one of them as missing, purely because the satellite that would have answered them wasn't built this time. Paired with `collect-anchors(body, kind)` --- the structural counterpart to `anchors`, finding anchors already sitting inside an in-memory `body` that was never placed into any document --- and `reemit(collected)`, which registers one such found anchor as if it had been placed here.
 
 = Two independent compile axes: `variant`, `preview`
 
-/ `variant()`: `"plain"` (default) or `"tracked"`, from `--input variant=...`. An *intrinsic* property of what the manuscript's own content means --- do revision marks show, styled, or not. A package with no such concept (a reporting-checklist package, say) never touches this and always sees `"plain"`.
-/ `preview()`: `true`/`false`, from `--input preview=true`. Whether to show debug highlighting for wherever a package's own anchors sit in the manuscript --- a drafting aid, never present in a real deliverable, and never a reason to change what a document's content *means* (that's `variant`'s job).
+Two flags are available to any document built on `contexture`, read by two plain functions:
 
-These are deliberately two separate flags, not one shared "mode" string, because of a concrete bug found combining two real packages built independently on the same idea: each treated "anything other than the default" as "my own alternate mode is on," so a preview request meant for one package silently flipped the other's rendering too, because both happened to read the same flag under incompatible vocabularies (`clean`/`tracked` vs `clean`/`annotated`, in the flag's very first version). Splitting the concept into two flags with two clearly distinct meanings, each with its own boolean-or-enum shape, made that collision structurally impossible rather than merely documented against. (`variant()`'s own default sentinel was renamed once more since, from `"clean"` to today's `"plain"` --- `"clean"` was itself borrowed from one specific consumer's vocabulary, not a neutral word; see `MULTI-DOCUMENT-BUNDLE-DESIGN.md` for the full story.)
+/ `variant()`: which *version of the truth* this compile is producing --- an intrinsic property of what the content itself means. `"plain"` by default (`--input variant=...` to change it); a project defines whatever other values make sense to it and reads them back with `variant() == "..."`. Code with no notion of variants never touches this at all, and always sees `"plain"`.
+/ `preview()`: `true`/`false`, from `--input preview=true`. A drafting aid only: "show me my own working, temporarily" --- never a reason to change what a document's content *means* (that's `variant`'s job), only how much of the plumbing is made visible while writing.
 
-Two independent, made-up satellites below --- neither is palimpsest's or equator's --- each read the two axes directly, to show they're plain, package-agnostic values, and that they never leak into each other:
+The difference in one sentence: `variant` decides *whether something is there at all*; `preview` decides *how much you can see of how it got there*. They're independent on purpose, so a project can cross them freely rather than picking one axis and losing the other.
 
-#code-of("manual-snippets/bundle-modes.typ")
+A small worked example, built on the same `term()` as the quickstart, plus one new function that only exists to make the difference concrete:
 
-Compiling this one file four ways produces four genuinely different combinations, each satellite gated independently:
+#code-of("manual-snippets/bundle-variant-preview.typ")
+
+`term()` highlights its own body whenever `preview()` is on --- a debug view of where the anchors are, nothing else changes. `note()` is a document aside that only renders --- box, text, and all --- when `variant()` is `"internal"`; its anchor is still registered on every compile, so `open-notes` can always find it, but its content genuinely doesn't exist outside the internal variant. `open-notes` itself only builds under `variant() == "internal"` --- a document listing every open note has nothing to say about a variant that has none.
+
+Compiling this one file four ways produces four different, genuinely independent combinations:
 
 #table(
   columns: (auto, 1fr),
   align: (left, left),
   stroke: 0.5pt + gray,
   table.header[*Compile*][*Files produced*],
-  [(no flags)], [`manuscript.pdf`, `note.pdf`],
-  [`--input variant=tracked`], [`manuscript-tracked.pdf`, `tracked-only-tracked.pdf`],
+  [(no flags)], [`manuscript.pdf`],
+  [`--input variant=internal`], [`manuscript-internal.pdf`, `open-notes-internal.pdf`],
   [`--input preview=true`], [`manuscript-preview.pdf`],
-  [`--input variant=tracked --input preview=true`], [`manuscript-tracked-preview.pdf`, `tracked-only-tracked-preview.pdf`],
+  [`--input variant=internal --input preview=true`], [`manuscript-internal-preview.pdf`, `open-notes-internal-preview.pdf`],
 )
 
-`note` builds exactly when `variant() == "plain"` and `preview()` is off; `tracked-only` builds exactly when `variant() == "tracked"`, regardless of `preview()`. Turning `preview` on never affects whether `tracked-only` builds, and switching `variant` never affects `note`'s own `preview`-gating --- the two axes compose freely because neither satellite (nor `bundle` itself) ever collapses them into one shared value.
+#side-by-side(
+  shot("manual-snippets/bundle-variant-preview/manuscript.png", caption: [(no flags)]),
+  shot("manual-snippets/bundle-variant-preview/manuscript-preview.png", caption: [`preview=true`]),
+)
+#side-by-side(
+  shot("manual-snippets/bundle-variant-preview/manuscript-internal.png", caption: [`variant=internal`]),
+  shot("manual-snippets/bundle-variant-preview/manuscript-internal-preview.png", caption: [both together]),
+)
 
-`bundle` folds both axes into the manuscript's own filename independently, in that same orthogonal way --- `manuscript.pdf` / `manuscript-tracked.pdf` / `manuscript-preview.pdf` / `manuscript-tracked-preview.pdf` --- so a preview compile never silently overwrites the plain deliverable, whatever `variant` happens to be at the same time, and a tracked-and-preview compile is simply both suffixes, in order.
+Notice what stays constant across each pair: turning `preview` on never makes the reviewer note appear --- that's `variant`'s call, not `preview`'s --- and switching to the internal variant never highlights the terms on its own. Only the fourth compile, with both flags, shows both effects at once, each exactly as it looks alone. That independence is the entire reason these are two flags rather than one shared string: a single flag can only ever represent one axis at a time, and code that treats "anything other than the default" as "my own alternate behavior is on" has no way to tell *which* alternate behavior a caller meant. Two flags, two distinct questions, make that ambiguity impossible rather than merely avoided by convention.
+
+`bundle` folds both axes into every filename independently, in the same orthogonal way --- so a preview compile never silently overwrites the plain deliverable on disk, whatever `variant` happens to be at the same time, and a compile using both is simply both suffixes, in order.
 
 = Diagnostics: `diagnose`, `set-strict`
 
 Typst has no public API to emit a soft compiler warning from user code, so the closest available approximation is a visible marker rendered directly at the fault location, which most Typst editors preview live.
 
 / `diagnose(message, always: false)`: reports a problem at the call site. Under `set-strict(true)`, always a hard `panic` --- a real compile error, in any mode. Otherwise, a visible inline marker --- muted specifically when `variant() == "plain"` and `preview()` is off (`always: false`, the default), since that's the file most likely to leave this codebase and reach someone who never asked to see an internal warning; shown unconditionally when `always: true`, for a diagnostic embedded in a document that is *never* itself the deliverable (a generated report, an internal checklist) where muting it would mean it's never seen at all.
-/ `set-strict(v)`: turns every `diagnose(...)` call, from any package built on `contexture`, in any document, into a hard error at once --- one shared CI gate rather than one per package. Normally set via `bundle(strict: true, ...)`, not called directly.
+/ `set-strict(v)`: turns every `diagnose(...)` call, anywhere in the bundle, into a hard error at once --- one shared CI gate rather than a check per document. Normally set via `bundle(strict: true, ...)`, not called directly.
 
 `xref` (below) always passes `always: true` --- a broken cross-reference should never be silently invisible even in the real, submitted deliverable:
 
@@ -193,15 +200,15 @@ Typst has no public API to emit a soft compiler warning from user code, so the c
 
 = `xref`: cross-references with a real page number
 
-`xref(label)` behaves like `@label`/`ref(label)` --- which already resolves across documents in a bundle, a satellite's own `@tab-results` renders the manuscript's real "Table 3" --- but appends the real page number: "Table 3, p. 14". Explicit rather than a bare `@label`, so it stays correct even if a future document duplicates the same label, where a bare `ref` would become ambiguous between the two copies. It operates on plain Typst labels (figures, headings, equations, ...), not on `contexture.anchor()` --- a separate, narrower tool from the anchor primitive above, for the common case where a real Typst label already exists and only the page number needs adding.
+`xref(label)` behaves like `@label`/`ref(label)` --- which already resolves across documents in a bundle, a satellite's own `@tab-results` renders the manuscript's real "Table 3" --- but appends the real page number: "Table 3, p. 14". Explicit rather than a bare `@label`, so it stays correct even if a future document duplicates the same label, where a bare `ref` would become ambiguous between the two copies. It operates on plain Typst labels (figures, headings, equations, ...), not on `contexture.anchor()` --- a separate, narrower tool for the common case where a real Typst label already exists and only the page number needs adding.
 
 = Composing independent packages <sec-composing>
 
-Two packages built independently on `contexture`, neither aware the other exists, combine by nothing more than listing both of their satellites under the same `documents:` --- the scenario the whole design exists for. `@preview/palimpsest`'s `letter(...)` and `@preview/equator`'s `checklist(...)` are each just a `satellite(...)` value; `bundle(...)` (this package, not either of theirs) is still the only thing that ever calls `document(...)`.
+Everything above is self-contained --- no example so far needed anything beyond `contexture` itself. In practice, `contexture` is meant as a shared foundation that several packages build on at once. `@preview/palimpsest` (manuscript revision letters) and `@preview/equator` (reporting-guideline checklists) are two such packages, published independently of each other and of `contexture`, neither aware the other exists. Combining them needs nothing beyond listing both of their satellites under the same `documents:` --- the scenario the whole design exists for:
 
 #code-of("manual-snippets/bundle-combo-palimpsest-equator.typ")
 
-One compile, four ways --- each producing a genuinely different combination of files, exactly like the made-up example in "Two independent compile axes" above, now with two real packages instead of a toy demonstration:
+One compile, four ways, exactly like "Two independent compile axes" above, now with two real packages instead of a self-contained demonstration:
 
 #table(
   columns: (auto, 1fr),
@@ -214,32 +221,16 @@ One compile, four ways --- each producing a genuinely different combination of f
   [`--input variant=tracked --input preview=true`], [`manuscript-tracked-preview.pdf`, `response-tracked-preview.pdf`],
 )
 
-`checklist.pdf` only ever comes out of the first, plain compile --- `checklist(...)`'s own `applicable` rule declines under either a tracked variant or preview mode, since either could shift page breaks relative to the real, submitted manuscript (see equator's manual for the full reasoning). Palimpsest's `letter(...)` has no such restriction --- a response letter is meaningful, and useful to preview, in every combination.
-
-The last (tracked *and* preview) compile shows both packages' overlays together, in the same document, each independent of the other --- item 1 gets equator's full `preview` highlight box (its own span has nothing to do with the reviewer exchange), item 2 gets palimpsest's tracked-mode revision mark *and* a small `[2]` tag from equator's own bare, point-marker form (see below for why it's a tag with no box, rather than a full highlight):
+The last compile shows both packages' overlays together, in the same document, each independent of the other:
 
 #shot("manual-snippets/bundle-combo-palimpsest-equator/manuscript-tracked-preview.png")
 
-*Rule 1 --- don't nest one package's marking function inside another's.* `#check(...)[#passage(...)[...]]` and the reverse each break something, for the same underlying reason both times: `passage()`'s own visual rendering and `check()`'s own preview-mode highlighting are each wrapped in a `context` block (needed to read live style state), and a `context` block is structurally opaque to anything trying to inspect its contents *before* layout. Nest `passage()` inside `check()` and `check()`'s own blank-content self-check can no longer see the real text inside --- it misreports the passage as empty, in *any* mode, not just under `preview: true`. Nest `check()` inside `passage()` and, under `preview: true` specifically, `passage()`'s own scan for `add`/`del`/`rep` marks can no longer see them --- it misreports "contains no mark". Two different symptoms, one cause, no nesting order avoids it.
+Building a marking function that renders its own content, the way `passage()` and `check()` both do here, raises exactly one extra question that a single-package example never has to answer: what happens when two such functions from two different packages meet on the same document, or even the same span? Two rules keep that safe --- never nest one package's marking function inside another's, and never call two of them as independent, rendering siblings on the exact same span (one of them needs a body-free form instead, to register coverage without printing the text twice). Both rules, why they're necessary, and the exact two-shape pattern (`check(id)` vs. `check(id, body)`) that resolves the second one, are documented where they belong: in palimpsest's and equator's own manuals, each under a section called "Combining with another `contexture` package."
 
-*Rule 2 --- don't call them as two independent, rendering siblings on the exact same span either.* This is item 1's pattern above, and it's correct *there* only because item 1's span and the reviewer exchange are two different things. Try it on the *same* span --- the reviewer's requested change genuinely is the manuscript's answer to a checklist item, item 2's case --- and both calls render their own `body`, so the text prints twice, plainly, visibly duplicated:
+= Where to go next
 
-#code(
-  "// DON'T -- prints the sentence twice when body is the same text:\n" +
-  "#check(\"2\")[The primary outcome was assessed by a rater blinded to group assignment.]\n" +
-  "#passage(<r1-1>)[\n" +
-  "  The primary outcome was assessed #add[by a rater blinded to group assignment].\n" +
-  "]"
-)
+This manual covers `contexture` on its own --- everything above works with no other package installed. For what to build with it:
 
-This is exactly why `check` (like palimpsest's own `passage`) accepts two shapes rather than one: `check(id, body)` for the common case, and a bare `check(id)` --- no second argument at all --- for exactly this collision. The bare form registers the same metadata (same page resolution, same everything `checklist.pdf` needs) but renders nothing beyond that small `[2]` tag under `preview: true`, and nothing at all in the plain compile --- there's no `body` here to duplicate or to nest, which is the whole point:
-
-#code(
-  "// item 2's actual code, above -- one render, one registration:\n" +
-  "#passage(<r1-1>)[\n" +
-  "  The primary outcome was assessed #add[by a rater blinded to group assignment].\n" +
-  "]\n" +
-  "#check(\"2\")"
-)
-
-Neither rule is specific to palimpsest or equator. Both follow directly from `anchor`'s own design: an anchor's content is rendered by whatever wraps it, structurally, so a structural pre-layout scan can only see through wrappers it already knows about (rule 1), and two independent calls that each render the same content will always render it twice, since nothing about `bundle`, `satellite`, or `anchor` deduplicates rendered output across calls (rule 2). Any future package built on `contexture` whose marking function renders its own `body` should expose the same two shapes --- a full form for the common case, and a bare, render-free form for when its own span coincides with something another package already renders (the way palimpsest's own `passage(anchors, body)`/`passage(body)` already does, for an unrelated reason --- arity dispatch turns out to be a natural fit for "this call sometimes needs less than its full argument list" in general, not just for this one case). Palimpsest's own manual walks through rule 1 in more depth, including the two failure modes as they actually looked before the fix; equator's manual covers `check(id)`'s own signature and trade-offs.
+- Manuscript revisions and a reviewer response letter that cites the real pages: `@preview/palimpsest`'s own manual.
+- Reporting-guideline checklists (CONSORT, PRISMA, SPIRIT, STARD, STROBE) that cite the real pages: `@preview/equator`'s own manual.
+- Combining several such packages in one compile: "Composing independent packages" above, and the "Combining with another `contexture` package" section in each package's own manual.

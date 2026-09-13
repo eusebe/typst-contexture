@@ -65,20 +65,25 @@ for src in docs/manual-snippets/*.typ; do
     rm -rf "$outdir"
     mkdir -p "$outdir"
 
-    if [ "$name" = "bundle-combo-palimpsest-equator" ]; then
-        # The one demo that needs all four (variant, preview)
-        # combinations, not just plain/preview -- this is the flagship
-        # proof that the two axes are independent. Root is one level up
-        # again: this file imports sibling packages (../../typst-palimpsest,
-        # ../../typst-equator) alongside contexture itself.
-        # bundle() already encodes variant/preview in each output's own
-        # filename (manuscript.pdf / manuscript-tracked.pdf /
-        # manuscript-preview.pdf / manuscript-tracked-preview.pdf),
-        # so the four compiles below never collide on their own -- no
-        # extra suffix needed here, unlike the generic branch below.
-        for flags in "" "--input variant=tracked" \
+    # Any snippet whose own story is about variant/preview needs all
+    # four combinations shown, not just plain/preview -- otherwise the
+    # manual could never demonstrate that the two axes compose
+    # independently. bundle() already encodes both axes in each output's
+    # own filename (manuscript.pdf / manuscript-X.pdf /
+    # manuscript-preview.pdf / manuscript-X-preview.pdf), so the four
+    # compiles below never collide on their own. Each such snippet picks
+    # its own non-default variant name -- looked up here since it isn't
+    # otherwise derivable from the file.
+    four_way_variant=""
+    case "$name" in
+        bundle-combo-palimpsest-equator) four_way_variant="tracked" ;;
+        bundle-variant-preview) four_way_variant="internal" ;;
+    esac
+
+    if [ -n "$four_way_variant" ]; then
+        for flags in "" "--input variant=$four_way_variant" \
                      "--input preview=true" \
-                     "--input variant=tracked --input preview=true"; do
+                     "--input variant=$four_way_variant --input preview=true"; do
             tmp="$(mktemp -d)"
             typst compile --features bundle --format bundle --ppi 300 --root .. $flags "$src" "$tmp"
             for f in "$tmp"/*; do
