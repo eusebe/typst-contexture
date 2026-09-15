@@ -42,7 +42,7 @@
 ///
 /// Named `preview()`, not `annotate()` (its name before this file's
 /// history below) — "annotate" described one specific visual treatment
-/// (equator's own highlight-and-superscript), not the underlying,
+/// (checkitoff's own highlight-and-superscript), not the underlying,
 /// genuinely package-agnostic concept this flag actually represents:
 /// "this is a debug/preview compile, not the pristine final deliverable".
 #let preview() = sys.inputs.at("preview", default: "false") == "true"

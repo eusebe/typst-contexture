@@ -7,7 +7,7 @@ status=0
 # bundle-modes: the 4 (variant, preview) combinations, checking that
 # each satellite's own applicable() is respected independently — the
 # direct regression test for the bug found combining palimpsest and
-# equator (see the test file's own comment). Passing an explicit output
+# checkitoff (see the test file's own comment). Passing an explicit output
 # path makes `typst compile --format bundle` create a directory of that
 # name holding one file per named document(), instead of the default
 # "<input-stem>/" directory every combo would otherwise share and

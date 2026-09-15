@@ -1,5 +1,5 @@
 #import "../../../typst-palimpsest/lib.typ" as palimpsest
-#import "../../../typst-equator/lib.typ" as equator
+#import "../../../typst-checkitoff/lib.typ" as checkitoff
 #import "../../lib.typ": bundle
 
 // The flagship "composition" example: two independently-developed
@@ -36,13 +36,13 @@
   template: my-template,
   documents: (
     palimpsest.letter(exchanges: exchanges),
-    equator.checklist(checklist: tiny-checklist),
+    checkitoff.checklist(checklist: tiny-checklist),
   ),
 )
 
 // Item 1 has nothing to do with this reviewer exchange -- check() just
 // renders its own text at its own spot, independently of passage().
-#equator.check("1")[Randomisation used a computer-generated sequence.]
+#checkitoff.check("1")[Randomisation used a computer-generated sequence.]
 
 // Item 2, though, IS the reviewer exchange: the added text is both a
 // tracked revision AND the manuscript's answer to item 2. check(id, body)
@@ -54,4 +54,4 @@
 #palimpsest.passage(<r1-1>)[
   The primary outcome was assessed #palimpsest.add[by a rater blinded to group assignment].
 ]
-#equator.check("2")
+#checkitoff.check("2")

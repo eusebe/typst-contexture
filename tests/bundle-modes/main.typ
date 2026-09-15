@@ -1,11 +1,11 @@
 #import "../../lib.typ": *
 
 // Regression test for the exact bug found combining palimpsest and
-// equator (MULTI-DOCUMENT-BUNDLE-DESIGN.md §1): two satellites with
+// checkitoff (MULTI-DOCUMENT-BUNDLE-DESIGN.md §1): two satellites with
 // different, independent applicability rules on `variant`/`preview`
 // must never interfere with each other.
 //
-// - "note" mimics equator's checklist: built only when variant == plain
+// - "note" mimics checkitoff's checklist: built only when variant == plain
 //   AND preview is off (its content would be misleading otherwise).
 // - "tracked-only" mimics a satellite that only makes sense in tracked
 //   variant (nothing real needs this today, it exists purely to prove

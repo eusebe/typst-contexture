@@ -3,7 +3,7 @@
 /// Purely structural (no layout, no context). Shared between every
 /// package built on `contexture` because it has zero coupling to any
 /// package's own semantics — it was duplicated near-verbatim between
-/// typst-palimpsest and typst-equator before this package existed (see
+/// typst-palimpsest and typst-checkitoff before this package existed (see
 /// MULTI-DOCUMENT-BUNDLE-DESIGN.md).
 ///
 /// Walks *every* content- or array-valued field of each element, not just

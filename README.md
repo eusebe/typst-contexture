@@ -1,6 +1,6 @@
 # Contexture
 
-**Contexture** is the small, package-agnostic engine three sibling packages — [`palimpsest`](../typst-palimpsest), [`equator`](../typst-equator), [`colophon`](../typst-colophon) — are all built on: it turns Typst's experimental **bundle export** into a primitive any package author can use to produce a manuscript plus one or more companion documents that can query each other's real, final page numbers, from a single compile.
+**Contexture** is the small, package-agnostic engine three sibling packages — [`palimpsest`](../typst-palimpsest), [`checkitoff`](../typst-checkitoff), [`colophon`](../typst-colophon) — are all built on: it turns Typst's experimental **bundle export** into a primitive any package author can use to produce a manuscript plus one or more companion documents that can query each other's real, final page numbers, from a single compile.
 
 You'll rarely import `contexture` for what it does on its own — it has no notion of revisions, checklists, or word counts. You reach for it when you're building (or combining) packages that need to produce more than one document from one manuscript.
 
@@ -18,7 +18,7 @@ The catch: Typst's own `document(...)` — the call that actually names one of t
 
 ## Key features
 
-- **`anchor` / `anchors`** — mark a spot in one document, read it back from any other, by its real page. The primitive every "cite this from another document" feature in this ecosystem (`palimpsest`'s `passage`, `equator`'s `check`) is built from.
+- **`anchor` / `anchors`** — mark a spot in one document, read it back from any other, by its real page. The primitive every "cite this from another document" feature in this ecosystem (`palimpsest`'s `passage`, `checkitoff`'s `check`) is built from.
 - **`satellite` / `bundle`** — one shared entry point that decides which documents come out of a compile, so several independent pieces of code can each contribute a document without fighting over how the split works, or which one owns `document(...)`.
 - **`variant` / `preview`** — two small, independent flags any document built on `contexture` can read: `variant` decides *whether something is there at all* (a package's own alternate output — tracked-changes, an internal-only note); `preview` decides *how much you can see of how it got there* (a drafting overlay, never present in the real deliverable). Crossed freely: a compile can ask for both, either, or neither.
 - **`diagnose` / `set-strict`** — a shared way to flag a problem (a visible marker at the fault, most Typst editors preview it live) that turns into a hard compile error everywhere at once under `strict: true` — one CI gate, not one per package.
@@ -75,7 +75,7 @@ Two packages built independently on `contexture`, neither aware the other exists
 #show: contexture.bundle.with(
   documents: (
     palimpsest.letter(exchanges: ...),
-    equator.checklist(checklist: ...),
+    checkitoff.checklist(checklist: ...),
   ),
 )
 ```
@@ -89,7 +89,7 @@ One compile, one manuscript, a tracked-changes version, a reviewer response lett
 ## Built on `contexture`
 
 - [`@preview/palimpsest`](../typst-palimpsest) — manuscript revisions and a reviewer response letter that cites the real pages.
-- [`@preview/equator`](../typst-equator) — reporting-guideline checklists (CONSORT, PRISMA, SPIRIT, STARD, STROBE) filled in with the real pages.
+- [`@preview/checkitoff`](../typst-checkitoff) — reporting-guideline checklists (CONSORT, PRISMA, SPIRIT, STARD, STROBE) filled in with the real pages.
 - [`@preview/colophon`](../typst-colophon) — a companion audit of the composed manuscript: word counts, reading time, a figure/table inventory.
 
 ## License

@@ -1,7 +1,7 @@
 /// Describes one document to build alongside the manuscript — the unit
 /// `bundle()` (`pilot.typ`) consumes. A package exposes a small
 /// constructor function that returns one of these (e.g. palimpsest's
-/// `letter(exchanges: ...)`, equator's `checklist(checklist: ...)`);
+/// `letter(exchanges: ...)`, checkitoff's `checklist(checklist: ...)`);
 /// the author lists those calls under `documents:` in their own
 /// `#show: contexture.bundle.with(...)`. `contexture` itself never knows
 /// or cares whether a given satellite is "authored" (the caller supplies
@@ -22,7 +22,7 @@
 /// could call directly just as easily — see MULTI-DOCUMENT-BUNDLE-DESIGN.md).
 ///
 /// `applicable() -> bool` — whether this satellite should be built at
-/// all for the current compile. Defaults to always. Equator's checklist
+/// all for the current compile. Defaults to always. Checkitoff's checklist
 /// uses this to never build under a non-`"plain"` variant or under
 /// `preview: true` (its own page numbers would then reflect a manuscript
 /// layout that isn't the real, submitted one) — by calling

@@ -3,12 +3,12 @@
 /// Marks a location in the current document with a namespaced,
 /// queryable piece of data — the one primitive every "cite this spot
 /// from another document" feature in this ecosystem is built from
-/// (palimpsest's `passage`, equator's `check`, and any future satellite
+/// (palimpsest's `passage`, checkitoff's `check`, and any future satellite
 /// that needs the same trick).
 ///
 /// `kind` namespaces the anchor so two packages can never collide even
 /// if they happen to pick the same `id` scheme — by convention, prefix
-/// it with the owning package's name (`"equator-item"`,
+/// it with the owning package's name (`"checkitoff-item"`,
 /// `"palimpsest-passage"`). `payload` is whatever data that package
 /// needs back when it later resolves this anchor (`anchors`, below) —
 /// entirely opaque to `contexture` itself.

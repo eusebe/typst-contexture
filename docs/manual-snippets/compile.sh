@@ -18,7 +18,7 @@
 #   the preview compile: checklist()'s own `applicable` rule never
 #   builds it under `preview: true` --- see src/pilot.typ.)
 #
-#   Unlike palimpsest's `variant` axis, equator has no second, self-named
+#   Unlike palimpsest's `variant` axis, checkitoff has no second, self-named
 #   output the way `letter()`'s tracked manuscript is --- contexture's
 #   bundle names the manuscript itself "manuscript-preview.pdf" under
 #   `--input preview=true`, so no dedup logic is needed here the way
@@ -76,7 +76,7 @@ for src in docs/manual-snippets/*.typ; do
     # otherwise derivable from the file.
     four_way_variant=""
     case "$name" in
-        bundle-combo-palimpsest-equator) four_way_variant="tracked" ;;
+        bundle-combo-palimpsest-checkitoff) four_way_variant="tracked" ;;
         bundle-variant-preview) four_way_variant="internal" ;;
     esac
 
