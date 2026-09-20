@@ -9,4 +9,4 @@ keywords = ["bundle", "multi-document", "cross-reference", "glossary", "index", 
 compiler = "0.15.0"
 categories = ["utility"]
 repository = "https://github.com/eusebe/typst-contexture"
-exclude = ["tests", "CLAUDE.md", "*.pdf", "**/*.pdf", "**/*.png", ".gitignore", ".DS_Store"]
+exclude = ["tests", "CLAUDE.md", "readme-assets", "*.pdf", "**/*.pdf", "**/*.png", ".gitignore", ".DS_Store"]

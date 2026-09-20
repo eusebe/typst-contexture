@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="readme-assets/logo.svg" width="110" alt="contexture logo">
+</p>
+
 # Contexture
 
 **Contexture** is the small, package-agnostic engine three sibling packages — [`palimpsest`](../typst-palimpsest), [`checkitoff`](../typst-checkitoff), [`colophon`](../typst-colophon) — are all built on: it turns Typst's experimental **bundle export** into a primitive any package author can use to produce a manuscript plus one or more companion documents that can query each other's real, final page numbers, from a single compile.
