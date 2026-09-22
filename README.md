@@ -4,7 +4,7 @@
 
 # Contexture
 
-**Contexture** is the small, package-agnostic engine three sibling packages — [`palimpsest`](../typst-palimpsest), [`checkitoff`](../typst-checkitoff), [`colophon`](../typst-colophon) — are all built on: it turns Typst's experimental **bundle export** into a primitive any package author can use to produce a manuscript plus one or more companion documents that can query each other's real, final page numbers, from a single compile.
+**Contexture** is the small, package-agnostic engine three sibling packages — [`palimpsest`](https://eusebe.github.io/typst-contexture-site/palimpsest/), [`checkitoff`](https://eusebe.github.io/typst-contexture-site/checkitoff/), [`colophon`](https://eusebe.github.io/typst-contexture-site/colophon/) — are all built on: it turns Typst's experimental **bundle export** into a primitive any package author can use to produce a manuscript plus one or more companion documents that can query each other's real, final page numbers, from a single compile.
 
 You'll rarely import `contexture` for what it does on its own — it has no notion of revisions, checklists, or word counts. You reach for it when you're building (or combining) packages that need to produce more than one document from one manuscript.
 
@@ -78,8 +78,8 @@ Two packages built independently on `contexture`, neither aware the other exists
 ```typ
 #show: contexture.bundle.with(
   documents: (
-    palimpsest.letter(exchanges: ...),
-    checkitoff.checklist(checklist: ...),
+    palimpsest.letter(exchanges: exchanges),
+    checkitoff.checklist(checklist: checklists.consort),
   ),
 )
 ```
@@ -92,9 +92,9 @@ One compile, one manuscript, a tracked-changes version, a reviewer response lett
 
 ## Built on `contexture`
 
-- [`@preview/palimpsest`](../typst-palimpsest) — manuscript revisions and a reviewer response letter that cites the real pages.
-- [`@preview/checkitoff`](../typst-checkitoff) — reporting-guideline checklists (CONSORT, PRISMA, SPIRIT, STARD, STROBE) filled in with the real pages.
-- [`@preview/colophon`](../typst-colophon) — a companion audit of the composed manuscript: word counts, reading time, a figure/table inventory.
+- [`@preview/palimpsest`](https://eusebe.github.io/typst-contexture-site/palimpsest/) — manuscript revisions and a reviewer response letter that cites the real pages.
+- [`@preview/checkitoff`](https://eusebe.github.io/typst-contexture-site/checkitoff/) — reporting-guideline checklists (CONSORT, PRISMA, SPIRIT, STARD, STROBE) filled in with the real pages.
+- [`@preview/colophon`](https://eusebe.github.io/typst-contexture-site/colophon/) — a companion audit of the composed manuscript: word counts, reading time, a figure/table inventory.
 
 ## License
 
