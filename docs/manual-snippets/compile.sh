@@ -1,10 +1,14 @@
 #!/bin/bash
-# Regenerates every pre-rendered PNG the manual embeds, then recompiles
-# the manual file(s) that use them --- the two-pipeline approach: real
+# Regenerates every pre-rendered PNG the contexture site's own pages
+# embed (../../../typst-contexture-site/contexture/*/index.typ, via
+# m.snippet(...)/m.screenshot(...)) --- the two-pipeline approach: real
 # example .typ files under docs/manual-snippets/ are compiled for real
-# (plain and preview, genuinely separate compiles), and the manual
-# itself (docs/manual*.typ) just does read()/image() on the results, no
-# package import, no eval().
+# (plain and preview, genuinely separate compiles), and the site pages
+# that reference them just do read()/image() on the results, no
+# package import, no eval(). (There used to be a docs/manual.typ that
+# assembled the same images into one PDF -- retired once the site
+# became the sole documentation entry point; see
+# ../../../SITE-VS-MANUALS-GAPS.md.)
 #
 # Snippet convention, so this script can stay generic instead of
 # special-casing each file:
@@ -123,11 +127,4 @@ for src in docs/manual-snippets/*.typ; do
     echo "  $name -> $outdir/"
 done
 
-echo "Snippets regenerated. Compiling manual(s)..."
-for manual in docs/manual*.typ; do
-    [ -f "$manual" ] || continue
-    typst compile --root .. "$manual"
-    echo "  $manual"
-done
-
-echo "Done."
+echo "Snippets regenerated."

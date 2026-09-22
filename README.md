@@ -88,7 +88,7 @@ One compile, one manuscript, a tracked-changes version, a reviewer response lett
 
 ## Documentation
 
-- [`docs/manual.typ`](docs/manual.typ) (⇒ [pdf](docs/manual.pdf)) — the full manual, one primitive at a time: the anchor primitive, a fuller worked example (a multi-page list of figures), `satellite`/`bundle`, the two compile axes, diagnostics, `xref`, and composing independent packages — every result shown is a real compiled screenshot, not a simulation.
+- [The contexture guide](https://eusebe.github.io/typst-contexture-site/contexture/) — the full guide, one primitive at a time: the anchor primitive, a fuller worked example (a multi-page list of figures), `satellite`/`bundle`, the two compile axes, diagnostics, `xref`, and composing independent packages — every result shown is a real compiled screenshot, not a simulation.
 
 ## Built on `contexture`
 
